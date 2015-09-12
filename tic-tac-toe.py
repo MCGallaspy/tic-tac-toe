@@ -1,25 +1,55 @@
 """
-A naive-bayes tic-tac-toe player. Given a game and a player to move as ('X' or 'O'), chooses the next move based on
-which one has the maximum probability of winning. The model used is this: each of the nine positions on the board
-is considered to be an IID random variable with three parameters: x - the probability that the position has an 'X' token
-on it, o, the probability that the position has an 'O' token on it, and n, the probability that neither token is on the
-position.
+We'll model the game of tic-tac-toe using a multinomial naive bayes model.
+The graph is given in the image plate_model.png.
+Explained here:
+Winner and Tokens are both multinomial distributions with hyperparameters Theta and Beta_i, respectively.
+W is the set of values for Winner = {X wins, O wins, Neither wins}
+T is the set of values of Tokens = {X, O, Empty}
+Theta is a Dirichlet distribution.
+Each of the Beta_i is a Dirichlet distribution -- we assume they are conditionally indepedent given Winner.
+P is the the set of positions -- we number each position in the tic-tac-toe board from top to bottom, left to right
+  starting with 1, for a total of 9 positions.
+G is the training set of games.
 
-There are two independent parameters, since x + o + n = 1, so we only consider x and o for any position.
+The model has two steps -- in the first step, we learn the parameters Theta and Beta_i given a training set G.
+This is done using Bayesian parameter estimation techniques.
+Specifically we generate a distribution P(Theta, Beta_i | G), which we can factor into:
 
-The positions are numbered like this:
+  P(Theta | G) * [product over i in W of P(Beta_i | G)]
 
-1 | 2 | 3
----------
-4 | 5 | 6
----------
-7 | 8 | 9
+And determine each posterior distribution individually. Let W_g be the observed values of Winner in G, and
+  similarly let T_g be the observed values of each Token in G. Then:
 
-Finally, we consider another variable W, which can take four values: player 'X' has won, player 'O' has won,
-the game is unfinished, and the game is a draw. We'll consider two different possibilities for W: one in which
-W is a deterministic function of the P_n's, and another in which it's a random variable with two independent parameters
-that are some to-be-determined function of P_n.
+  P(Theta | G) = P(Theta) * P(W_g | Theta) / integral of numerator dTheta
 
-The idea is first to see if a naive-bayes player can do well with a deterministic W model, and then compare the
-performance to the probabilistic W model.
+P(Theta) is the prior -- a Dirichlet distribution. Use an initial value, but then the posterior from the last run of the
+  algorithm becomes the prior for the next.
+P(W_g | Theta) is the likelihood function -- Winner is a multinomial distribution, and given Theta we can easily
+   compute the likelihood.
+The denominator is a normalizing constant.
+For each Beta_i:
+
+  P(Beta_i | G ) = P(Beta_i ) * P(T_g | Beta_i) / intergal of numerator dBeta_i
+
+First, for each game, the Beta_i is chosen to correspond to the observed value of W_g for the game.
+The observed value of W_g dictates which Beta_i is being learned.
+P(Beta_i) is again a Dirichlet prior. Again the posterior of the last run becomes the prior of the next.
+P(T_g | Beta_i) is again a likelihood function -- Token is a multinomial with hyperparameters Beta_i.
+
+Once posteriors are calculated, we move on to step 2 of the model. We consider the hyperparameters as observed and
+  calculate P(Winner = w | T_new), where w is some state in W, and T_new is a set of observed tokens.
+
+  P(W=w | T_new) = P(W=w) * P(T_new | W=w) / P(T_new)
+
+Given the hyperparameters as observed, each term on the RHS can be calculated. P(W=w) is easily determined from
+  P(Theta | G). Similarly, P(T_new | W=w) is a likelihood function again given the P(Beta_i | G) where Beta_i is
+  the posterior corresponding to w. The denominator is again a normalizing constant:
+
+  P(T_new) = integral of P(T_new | W=w) * P(W=w) dW = sum over W of P(T_new | W=w=i) * P(W=w_i)
+
+The integral becomes a sum of the likelihoods of the positions given a winner w_i in W.
+
+Given a state of the board and a player, P, to move, we perform this calculation once for each empty position on the
+  board. The state w is fixed and chosen so that P is the winner. Each of T_new is the old state but with one of the
+  empty positions filled with P's token. We choose to make the move that maximizes the probability.
 """
