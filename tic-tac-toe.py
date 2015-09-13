@@ -53,3 +53,82 @@ Given a state of the board and a player, P, to move, we perform this calculation
   board. The state w is fixed and chosen so that P is the winner. Each of T_new is the old state but with one of the
   empty positions filled with P's token. We choose to make the move that maximizes the probability.
 """
+import numpy as np
+from pymc3 import Model, Dirichlet, find_MAP, NUTS, sample, Multinomial, traceplot
+from scipy import optimize
+
+model = Model()
+X, O, Neither = "X", "O", "Neither"
+WINNER = (X, O, Neither,)
+TOKENS = (X, O, Neither,)
+
+# prior observations. Mappings of variables, W, T_1, T_2, ..., T_9
+games = [
+    {
+      "W": Neither,
+      "T1": X,
+      "T2": O,
+      "T3": X,
+      "T4": X,
+      "T5": O,
+      "T6": O,
+      "T7": O,
+      "T8": X,
+      "T9": X,
+    },
+    {
+      "W": O,
+      "T1": O,
+      "T2": O,
+      "T3": Neither,
+      "T4": O,
+      "T5": X,
+      "T6": X,
+      "T7": O,
+      "T8": X,
+      "T9": Neither,
+    },
+]
+
+def w_ind(s):
+    """
+    Maps a symbol in WINNER to an index, for consistency
+    :param s: A symbol in WINNER
+    :return: an integer index
+    """
+    return WINNER.index(s)
+
+def t_ind(t):
+    """
+    Maps a symbol in TOKENS to an index, for consistency
+    :param t: A symbol in TOKENS
+    :return: an integer index
+    """
+    return TOKENS.index(t)
+
+with model:
+    theta = Dirichlet("theta", np.ones(3), shape=3)
+    beta = {t: Dirichlet(name="beta_%s" % t, a=np.ones(3), shape=3) for t in WINNER}
+
+    for g_ind, game in enumerate(games):
+        wobs = [0, 0, 0]
+        wobs[w_ind(game["W"])] += 1
+        w = Multinomial("w_%s" % g_ind, 1, theta, observed=wobs)
+        for pos in range(1, 10):
+            tobs = [0, 0, 0]
+            tobs[t_ind(game["T%s" % pos])] += 1
+            t = Multinomial("t_g%s_%s" % (g_ind, pos), 1, beta[game["W"]], observed=tobs)
+
+    print("finding map estimate...")
+    map_estimate = find_MAP(fmin=optimize.fmin_powell)
+
+    print("map estimate:")
+    print(map_estimate)
+
+    print("NUTS")
+    step = NUTS(scaling=map_estimate)
+
+    print("sample")
+    hierarchical_trace = sample(2000, step, start=map_estimate)
+
+traceplot(hierarchical_trace[500:])
