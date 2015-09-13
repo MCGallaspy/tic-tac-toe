@@ -23,10 +23,9 @@ How to run this
 
 Get ipython notebook and pymc3. I use anaconda, since the dependendecies are complex. Steps:
 
-#. Get anaconda
-#. Create a new conda environment with some deps. See [Theano installation help](http://deeplearning.net/software/theano/install_windows.html#alternative-anaconda)
-  in particular. Also see the pymc3 README for other deps.
-#. Once you have an environment with all dependencies, clone pymc3 repo, then run `python setup.py install`.
-#. In your environment run `conda install jupyter` to get the notebook viewer.
-#. `jupyter notebook` to launch the notebook viewer.
+1. Get anaconda
+2. Create a new conda environment with some deps. See [Theano installation help](http://deeplearning.net/software/theano/install_windows.html#alternative-anaconda) in particular. Also see the pymc3 README for other deps.
+3. Once you have an environment with all dependencies, clone pymc3 repo, then run `python setup.py install`.
+4. In your environment run `conda install jupyter` to get the notebook viewer.
+5. `jupyter notebook` to launch the notebook viewer.
 #. Open and run `tic-tac-toe.ipynb`. It's not fast. Enjoy.
