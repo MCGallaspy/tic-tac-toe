@@ -28,4 +28,4 @@ Get ipython notebook and pymc3. I use anaconda, since the dependendecies are com
 3. Once you have an environment with all dependencies, clone pymc3 repo, then run `python setup.py install`.
 4. In your environment run `conda install jupyter` to get the notebook viewer.
 5. `jupyter notebook` to launch the notebook viewer.
-#. Open and run `tic-tac-toe.ipynb`. It's not fast. Enjoy.
+6. Open and run `tic-tac-toe.ipynb`. It's not fast. Enjoy.
